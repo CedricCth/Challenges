@@ -23,13 +23,32 @@ export interface CreateChallengeInput {
   endDate?: string | null;
   metadata?: Record<string, unknown>;
   createdBy: string;
+  participantIds: string[];
+}
+
+export interface UpdateChallengeInput {
+  title?: string;
+  description?: string | null;
+  goalMetric?: string | null;
+  goalTarget?: number | null;
+  goalDirection?: "higher" | "lower" | null;
+  status?: Challenge["status"];
+  startDate?: string | null;
+  endDate?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
 export interface IChallengeRepo {
   findById(id: string): Promise<ChallengeWithParticipants | null>;
   findActiveForUser(userId: string): Promise<Challenge[]>;
+  listForUser(userId: string): Promise<Challenge[]>;
   create(input: CreateChallengeInput): Promise<Challenge>;
-  declareWinner(id: string, winnerId: string | null): Promise<void>;
+  update(id: string, patch: UpdateChallengeInput): Promise<Challenge>;
+  declareWinner(
+    id: string,
+    args: { winnerId: string | null; tie: boolean },
+  ): Promise<void>;
+  delete(id: string): Promise<void>;
 }
 
 export interface AddStatInput {

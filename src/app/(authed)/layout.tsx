@@ -24,11 +24,17 @@ export default async function AuthedLayout({
 
   return (
     <div className="flex min-h-screen flex-1 flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-3">
+      <header className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
         <Link href="/dashboard" className="font-semibold tracking-tight">
           Cedi <span className="text-muted-foreground">vs</span> Stefi
         </Link>
         <nav className="flex items-center gap-1 text-sm">
+          <Link
+            href="/challenges"
+            className="rounded-md px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            Challenges
+          </Link>
           <LogoutButton />
         </nav>
       </header>
