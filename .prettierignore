@@ -1,0 +1,6 @@
+.next
+node_modules
+public
+pnpm-lock.yaml
+src/server/db/migrations
+docs/diagrams
