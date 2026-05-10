@@ -22,8 +22,18 @@ import * as schema from "./schema";
  * set local request.jwt.claims = ...;` per-transaction wrapper so Drizzle
  * queries also flow through RLS.
  */
+/*
+ * IMPORTANT: SUPABASE_DB_URL must point at the **transaction pooler**, not
+ * the direct DB. The direct connection (`db.<ref>.supabase.co:5432`) is
+ * IPv6-only as of late 2024 — Vercel serverless functions can't reach it.
+ * The pooler is `aws-0-<region>.pooler.supabase.com:6543` and accepts IPv4.
+ *
+ * The pooler is in "transaction mode" so we disable prepared statements.
+ * SSL is required by Supabase.
+ */
 const queryClient = postgres(env.SUPABASE_DB_URL, {
   prepare: false,
+  ssl: "require",
   max: 1,
 });
 
