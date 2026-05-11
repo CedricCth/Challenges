@@ -249,4 +249,4 @@ shipped. **31 Vitest tests pass.** Lighthouse perf/a11y pass left as a
 manual task on the deployed URL.
 
 Future work tracked in:
-- [`docs/10-FUTURE-EMAIL-NOTIFICATIONS.md`](docs/10-FUTURE-EMAIL-NOTIFICATIONS.md) — email digest worker
+- [`docs/10-FUTURE-EMAIL-NOTIFICATIONS.md`](docs/10-FUTURE-EMAIL-NOTIFICATIONS.md) — email digest worker (in-app notifications are already wired up; this is the second consumer)

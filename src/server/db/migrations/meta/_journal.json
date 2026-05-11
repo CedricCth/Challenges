@@ -57,6 +57,13 @@
       "when": 1778490982483,
       "tag": "0007_seed_reading",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778496226550,
+      "tag": "0008_avatars_bucket",
+      "breakpoints": true
     }
   ]
 }
