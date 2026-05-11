@@ -54,9 +54,9 @@ export async function addStatEntry(
   };
 
   // `recordedAt` is universal across challenge types — handled outside the
-  // strategy's per-type statSchema. The form sends "YYYY-MM-DDTHH:mm" in the
-  // viewer's local TZ; new Date() parses it as local time, which is what we
-  // want for ADR-017 (store as UTC, render in viewer-local).
+  // strategy's per-type statSchema. The client converts the datetime-local
+  // picker value to a proper ISO string (with TZ offset) before submitting,
+  // so `new Date()` here gets the exact instant the user intended.
   const recordedAtRaw = formData.get("recordedAt");
   let recordedAt: Date | undefined;
   if (typeof recordedAtRaw === "string" && recordedAtRaw.length > 0) {
@@ -64,9 +64,11 @@ export async function addStatEntry(
     if (Number.isNaN(d.getTime())) {
       return { ok: false, error: "That date doesn't look right." };
     }
-    // Reject far-future dates (typo guard); allow a small grace window.
-    if (d.getTime() > Date.now() + 60 * 60 * 1000) {
-      return { ok: false, error: "Can't log an entry in the future." };
+    // Generous typo guard. We allow 24h ahead so that a curl or old client
+    // bundle that sends a naive timestamp (parsed by the server as UTC)
+    // doesn't fail when the user is in a TZ east of UTC.
+    if (d.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+      return { ok: false, error: "Can't log an entry that far in the future." };
     }
     recordedAt = d;
   }

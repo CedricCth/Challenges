@@ -137,15 +137,26 @@ export async function sendDigestEmails(opts?: {
     const subject = buildSubject(events);
     const html = buildHtml({ recipientName: name, events, siteUrl });
     try {
-      await resend.emails.send({
+      // The Resend SDK returns { data, error } rather than throwing on
+      // API-level rejections (e.g. "free tier can only send to your own
+      // verified address"). We need to inspect `error` explicitly — a
+      // try/catch alone silently marks rejections as success.
+      const response = await resend.emails.send({
         from: env.RESEND_FROM,
         to: email,
         subject,
         html,
       });
+      if (response.error) {
+        console.error(
+          `[email] resend rejected for ${name} <${email}>:`,
+          response.error,
+        );
+        continue;
+      }
       successfulIds.push(...events.map((e) => e.notificationId));
     } catch (err) {
-      console.error(`[email] resend failed for ${name}:`, err);
+      console.error(`[email] resend threw for ${name}:`, err);
     }
   }
 

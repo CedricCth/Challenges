@@ -59,6 +59,20 @@ export function StatsForm({
       // Empty file picker — drop the empty File so the server skips upload.
       formData.delete("photo");
     }
+
+    // datetime-local sends "YYYY-MM-DDTHH:mm" with no timezone info. The
+    // server's `new Date(...)` would interpret that as UTC and reject the
+    // picked-in-CEST "now" as 2h in the future. Convert to a full ISO
+    // string (with TZ offset embedded) before submitting so the server
+    // parses it as the same instant the user actually picked.
+    const recordedAtRaw = formData.get("recordedAt");
+    if (typeof recordedAtRaw === "string" && recordedAtRaw.length > 0) {
+      const localDate = new Date(recordedAtRaw); // browser interprets as local
+      if (!Number.isNaN(localDate.getTime())) {
+        formData.set("recordedAt", localDate.toISOString());
+      }
+    }
+
     startTransition(() => action(formData));
   }
 
