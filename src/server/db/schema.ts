@@ -22,6 +22,10 @@ import {
 const authSchema = pgSchema("auth");
 export const authUsers = authSchema.table("users", {
   id: uuid("id").primaryKey(),
+  // Supabase manages this column. Declared so the email worker can join
+  // through to find recipient addresses. Filtered out of migrations by
+  // drizzle.config.ts (schemaFilter: ["public"]).
+  email: text("email"),
 });
 
 /**

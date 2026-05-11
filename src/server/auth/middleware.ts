@@ -13,8 +13,15 @@ const PUBLIC_PATHS = [
   "/api/log-error",
 ];
 
+// Anything under these prefixes skips the user-session gate. Used by
+// Vercel Cron (which uses Bearer auth via CRON_SECRET, not user cookies).
+const PUBLIC_PREFIXES = ["/api/cron/", "/_next"];
+
 function isPublicPath(pathname: string) {
-  return PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/_next");
+  return (
+    PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+  );
 }
 
 /**
