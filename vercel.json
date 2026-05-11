@@ -4,7 +4,8 @@
   "crons": [
     {
       "path": "/api/cron/email-notifications",
-      "schedule": "*/15 * * * *"
+      "//": "Vercel Hobby caps cron frequency (daily-only on most accounts in 2025+). Once-a-day digest is fine for a 2-user app — bump to '0 */1 * * *' once you upgrade to Pro if you want hourly.",
+      "schedule": "0 8 * * *"
     }
   ]
 }
