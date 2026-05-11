@@ -42,6 +42,8 @@ function toChallenge(row: ChallengeRow): Challenge {
     endDate: row.endDate,
     winnerId: row.winnerId,
     tie: row.tie,
+    winnerNote: row.winnerNote,
+    winnerPhotoUrl: row.winnerPhotoUrl,
     coverImageUrl: row.coverImageUrl,
     metadata: (row.metadata as Record<string, unknown>) ?? {},
     createdBy: row.createdBy,
@@ -280,13 +282,15 @@ export const challengeRepo: IChallengeRepo = {
     return toChallenge(row);
   },
 
-  async declareWinner(id, { winnerId, tie }) {
+  async declareWinner(id, { winnerId, tie, winnerNote, winnerPhotoUrl }) {
     await db
       .update(challenges)
       .set({
         status: "completed",
         winnerId: tie ? null : winnerId,
         tie,
+        ...(winnerNote !== undefined && { winnerNote }),
+        ...(winnerPhotoUrl !== undefined && { winnerPhotoUrl }),
       })
       .where(eq(challenges.id, id));
   },

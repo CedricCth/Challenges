@@ -70,7 +70,12 @@ export function makeChallengeService(repo: IChallengeRepo) {
 
     async declareWinner(
       id: string,
-      args: { winnerId: string | null; tie: boolean },
+      args: {
+        winnerId: string | null;
+        tie: boolean;
+        winnerNote?: string | null;
+        winnerPhotoUrl?: string | null;
+      },
     ) {
       return repo.declareWinner(id, args);
     },

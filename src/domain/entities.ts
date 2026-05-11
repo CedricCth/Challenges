@@ -35,6 +35,8 @@ export interface Challenge {
   endDate: string | null;
   winnerId: string | null;
   tie: boolean;
+  winnerNote: string | null;
+  winnerPhotoUrl: string | null;
   coverImageUrl: string | null;
   metadata: Record<string, unknown>;
   createdBy: string;

@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { Profile } from "@/domain/entities";
+import { resizeImage } from "@/lib/image-resize";
 
 import { declareWinner, type ActionResult } from "../actions";
 
@@ -33,6 +35,7 @@ export function DeclareWinnerDialog({
     participants[0]?.id ?? "",
   );
   const [confirmText, setConfirmText] = useState("");
+  const [resizing, setResizing] = useState(false);
   const [state, action] = useActionState<ActionResult | null, FormData>(
     declareWinner,
     null,
@@ -41,6 +44,28 @@ export function DeclareWinnerDialog({
 
   const matchesConfirm =
     confirmText.trim().toLowerCase() === CONFIRM_PHRASE;
+
+  async function handleSubmit(formData: FormData) {
+    formData.set("challengeId", challengeId);
+    formData.set("outcome", outcome);
+    if (outcome === "winner") formData.set("winnerId", winnerId);
+
+    const file = formData.get("photo");
+    if (file instanceof File && file.size > 0) {
+      setResizing(true);
+      try {
+        const { file: resized } = await resizeImage(file);
+        formData.set("photo", resized);
+      } catch {
+        // Server still validates; fall through with the original file.
+      } finally {
+        setResizing(false);
+      }
+    } else {
+      formData.delete("photo");
+    }
+    startTransition(() => action(formData));
+  }
 
   return (
     <Dialog
@@ -53,7 +78,7 @@ export function DeclareWinnerDialog({
       <DialogTrigger asChild>
         <Button>Declare winner</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Declare the winner</DialogTitle>
           <DialogDescription>
@@ -62,15 +87,7 @@ export function DeclareWinnerDialog({
             row in Supabase.
           </DialogDescription>
         </DialogHeader>
-        <form
-          action={(fd) => {
-            fd.set("challengeId", challengeId);
-            fd.set("outcome", outcome);
-            if (outcome === "winner") fd.set("winnerId", winnerId);
-            startTransition(() => action(fd));
-          }}
-          className="space-y-4"
-        >
+        <form action={handleSubmit} className="space-y-4">
           <div className="space-y-3">
             <label className="flex items-center gap-3 rounded-md border px-3 py-2 text-sm">
               <input
@@ -113,6 +130,33 @@ export function DeclareWinnerDialog({
               </select>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="winner-note">Note (optional)</Label>
+            <Textarea
+              id="winner-note"
+              name="note"
+              rows={3}
+              maxLength={1000}
+              placeholder="How did it go down? Anything worth remembering?"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="winner-photo">Victory photo (optional)</Label>
+            <Input
+              id="winner-photo"
+              name="photo"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+            />
+            <p className="text-xs text-muted-foreground">
+              Resized in your browser before upload (longest side ≤ 1600 px,
+              EXIF stripped).
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="confirm-phrase">
               Type{" "}
@@ -147,8 +191,15 @@ export function DeclareWinnerDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!matchesConfirm || pending}>
-              {pending ? "Saving…" : "Confirm"}
+            <Button
+              type="submit"
+              disabled={!matchesConfirm || pending || resizing}
+            >
+              {resizing
+                ? "Resizing photo…"
+                : pending
+                  ? "Saving…"
+                  : "Confirm"}
             </Button>
           </DialogFooter>
         </form>

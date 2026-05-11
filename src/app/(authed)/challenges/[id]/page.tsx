@@ -16,6 +16,7 @@ import { isParticipantOrCreator } from "@/features/challenges/repo";
 import { findProfilesByIds } from "@/features/profiles/repo";
 import { DeclareWinnerDialog } from "@/features/challenges/components/declare-winner-dialog";
 import { WinnerBadge } from "@/features/challenges/components/winner-badge";
+import { WinnerSummary } from "@/features/challenges/components/winner-summary";
 import { StatsChart } from "@/features/stats/components/stats-chart";
 import { StatsEntriesList } from "@/features/stats/components/stats-entries-list";
 import { signStatPhotoUrl } from "@/features/stats/storage";
@@ -64,18 +65,22 @@ export default async function ChallengeDetailPage({
   );
 
   // Sign photo URLs in parallel.
-  const entriesWithPhotos = await Promise.all(
-    allEntries.map(async (e) => ({
-      ...e,
-      signedPhotoUrl: await signStatPhotoUrl(e.photoUrl),
-    })),
-  );
+  const [entriesWithPhotos, signedWinnerPhotoUrl] = await Promise.all([
+    Promise.all(
+      allEntries.map(async (e) => ({
+        ...e,
+        signedPhotoUrl: await signStatPhotoUrl(e.photoUrl),
+      })),
+    ),
+    signStatPhotoUrl(challenge.winnerPhotoUrl),
+  ]);
 
   const metricLabels = Object.fromEntries(
     (strategy?.metrics ?? []).map((m) => [m.metric, m.label]),
   );
 
   const canDeclare = challenge.status !== "completed";
+  const isCompleted = challenge.status === "completed";
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 space-y-6">
@@ -97,6 +102,15 @@ export default async function ChallengeDetailPage({
           <Link href={`/challenges/${challenge.id}/edit`}>Edit</Link>
         </Button>
       </div>
+
+      {isCompleted && (
+        <WinnerSummary
+          challenge={challenge}
+          strategy={strategy}
+          profilesById={profilesById}
+          signedWinnerPhotoUrl={signedWinnerPhotoUrl}
+        />
+      )}
 
       <Card>
         <CardHeader>

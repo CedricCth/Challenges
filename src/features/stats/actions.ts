@@ -52,6 +52,24 @@ export async function addStatEntry(
     note: (formData.get("note") as string | null) || undefined,
   };
 
+  // `recordedAt` is universal across challenge types — handled outside the
+  // strategy's per-type statSchema. The form sends "YYYY-MM-DDTHH:mm" in the
+  // viewer's local TZ; new Date() parses it as local time, which is what we
+  // want for ADR-017 (store as UTC, render in viewer-local).
+  const recordedAtRaw = formData.get("recordedAt");
+  let recordedAt: Date | undefined;
+  if (typeof recordedAtRaw === "string" && recordedAtRaw.length > 0) {
+    const d = new Date(recordedAtRaw);
+    if (Number.isNaN(d.getTime())) {
+      return { ok: false, error: "That date doesn't look right." };
+    }
+    // Reject far-future dates (typo guard); allow a small grace window.
+    if (d.getTime() > Date.now() + 60 * 60 * 1000) {
+      return { ok: false, error: "Can't log an entry in the future." };
+    }
+    recordedAt = d;
+  }
+
   // Optional photo upload. Validate MIME + size on the server (the client
   // resizes + re-encodes, but we don't trust the client).
   const photoFile = formData.get("photo");
@@ -92,6 +110,7 @@ export async function addStatEntry(
       userId,
       rawInput,
       photoUrl,
+      recordedAt,
     );
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -74,6 +74,8 @@ export const challenges = pgTable(
       onDelete: "set null",
     }),
     tie: boolean("tie").notNull().default(false),
+    winnerNote: text("winner_note"),
+    winnerPhotoUrl: text("winner_photo_url"),
     coverImageUrl: text("cover_image_url"),
     metadata: jsonb("metadata")
       .notNull()

@@ -72,6 +72,8 @@ function fitnessChallenge(
     endDate: args.endDate,
     winnerId: args.winnerId,
     tie: args.tie ?? false,
+    winnerNote: null,
+    winnerPhotoUrl: null,
     coverImageUrl: null,
     metadata: {},
     createdBy: "cedi",

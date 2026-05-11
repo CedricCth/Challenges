@@ -7,7 +7,12 @@ import { z } from "zod";
 import { challengeService } from "@/server/composition";
 import { createClient } from "@/server/auth/server";
 import { isParticipantOrCreator } from "./repo";
-import { declareWinnerSchema, deleteChallengeSchema } from "./schemas";
+import {
+  ALLOWED_PHOTO_MIME,
+  MAX_PHOTO_BYTES,
+  declareWinnerSchema,
+  deleteChallengeSchema,
+} from "./schemas";
 
 export type ActionResult<T = unknown> =
   | { ok: true; data?: T }
@@ -152,11 +157,12 @@ export async function declareWinner(
     challengeId: formData.get("challengeId"),
     outcome: formData.get("outcome"),
     winnerId: formData.get("winnerId") || undefined,
+    note: (formData.get("note") as string | null) || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: "Pick a winner or a tie." };
   }
-  const { challengeId, outcome, winnerId } = parsed.data;
+  const { challengeId, outcome, winnerId, note } = parsed.data;
   if (outcome === "winner" && !winnerId) {
     return { ok: false, error: "Pick which of you won." };
   }
@@ -164,9 +170,46 @@ export async function declareWinner(
     return { ok: false, error: "You can't declare a winner here." };
   }
 
+  // Optional victory photo. Stored under the same `stat-photos` bucket so it
+  // reuses the existing RLS policy — path format `<challenge>/<uploader>/...`
+  // is preserved. The "winner-" filename prefix is just convention.
+  const photoFile = formData.get("photo");
+  let winnerPhotoUrl: string | null | undefined = undefined;
+  if (photoFile instanceof File && photoFile.size > 0) {
+    if (!ALLOWED_PHOTO_MIME.includes(photoFile.type)) {
+      return { ok: false, error: "Photo must be JPEG, PNG or WebP." };
+    }
+    if (photoFile.size > MAX_PHOTO_BYTES) {
+      return { ok: false, error: "Photo is too large." };
+    }
+    const supabase = await createClient();
+    const ext =
+      photoFile.type === "image/png"
+        ? "png"
+        : photoFile.type === "image/webp"
+          ? "webp"
+          : "jpg";
+    const path = `${challengeId}/${userId}/winner-${crypto.randomUUID()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from("stat-photos")
+      .upload(path, photoFile, {
+        contentType: photoFile.type,
+        upsert: false,
+      });
+    if (uploadErr) {
+      return {
+        ok: false,
+        error: `Couldn't upload the photo: ${uploadErr.message}`,
+      };
+    }
+    winnerPhotoUrl = path;
+  }
+
   await challengeService.declareWinner(challengeId, {
     winnerId: outcome === "tie" ? null : winnerId ?? null,
     tie: outcome === "tie",
+    winnerNote: note ?? null,
+    winnerPhotoUrl,
   });
 
   revalidatePath("/challenges");

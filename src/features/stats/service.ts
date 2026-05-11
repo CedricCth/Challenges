@@ -15,6 +15,7 @@ export function makeStatsService(repo: IStatsRepo) {
       profileId: string,
       rawInput: unknown,
       photoUrl: string | null,
+      recordedAt?: Date,
     ) {
       const strategy = ChallengeTypeFactory.get(typeKey);
       const parsed = strategy.statSchema.parse(rawInput) as {
@@ -34,6 +35,7 @@ export function makeStatsService(repo: IStatsRepo) {
         unit,
         note: parsed.note ?? null,
         photoUrl,
+        recordedAt,
       });
     },
 

@@ -46,7 +46,12 @@ export interface IChallengeRepo {
   update(id: string, patch: UpdateChallengeInput): Promise<Challenge>;
   declareWinner(
     id: string,
-    args: { winnerId: string | null; tie: boolean },
+    args: {
+      winnerId: string | null;
+      tie: boolean;
+      winnerNote?: string | null;
+      winnerPhotoUrl?: string | null;
+    },
   ): Promise<void>;
   delete(id: string): Promise<void>;
 }

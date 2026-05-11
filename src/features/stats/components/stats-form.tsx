@@ -33,6 +33,13 @@ export function StatsForm({
   const [metric, setMetric] = useState(defaultMetric ?? metrics[0]?.metric ?? "");
   const [resizing, setResizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Pre-fill the picker with "now" in the viewer's local TZ. <input
+  // type="datetime-local"> wants the format YYYY-MM-DDTHH:mm.
+  const nowLocalIso = (() => {
+    const d = new Date();
+    const off = d.getTimezoneOffset() * 60_000;
+    return new Date(d.getTime() - off).toISOString().slice(0, 16);
+  })();
 
   const currentUnit = metrics.find((m) => m.metric === metric)?.unit ?? "";
 
@@ -96,6 +103,20 @@ export function StatsForm({
           required
           placeholder="e.g. 79.4"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="recordedAt">When</Label>
+        <Input
+          id="recordedAt"
+          name="recordedAt"
+          type="datetime-local"
+          defaultValue={nowLocalIso}
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          Defaults to right now. Change it if you&apos;re back-filling.
+        </p>
       </div>
 
       <div className="space-y-2">
