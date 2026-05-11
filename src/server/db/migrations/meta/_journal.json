@@ -50,6 +50,13 @@
       "when": 1778490479754,
       "tag": "0006_notifications_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778490982483,
+      "tag": "0007_seed_reading",
+      "breakpoints": true
     }
   ]
 }
