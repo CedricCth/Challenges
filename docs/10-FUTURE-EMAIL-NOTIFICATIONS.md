@@ -1,4 +1,18 @@
-# 10 — Future: Email Notifications
+# 10 — Email Notifications
+
+> **Status (2026-05-11):** Shipped, but with a different delivery model than
+> the original sketch below. Emails go out **immediately** via Next.js's
+> `after()` API right after the producer inserts a notification — no waiting
+> for a cron tick. The daily cron at `/api/cron/email-notifications` still
+> exists as a **retry safety net** for any send that failed inline (network
+> blip, Resend hiccup, function killed before `after()` finished). The
+> sketch below is preserved for context. The actual implementation lives in
+> [`src/features/notifications/email.ts`](../src/features/notifications/email.ts)
+> (shared rendering + send) and
+> [`src/features/notifications/producer.ts`](../src/features/notifications/producer.ts)
+> (the `after()` fire). The cron route in
+> [`src/app/api/cron/email-notifications/route.ts`](../src/app/api/cron/email-notifications/route.ts)
+> just delegates to the same helper.
 
 The in-app **News** tab landed in Phase 8.5 as a producer/consumer pattern:
 
