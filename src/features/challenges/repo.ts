@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/server/db/client";
 import {
@@ -74,6 +74,81 @@ function toStatEntry(row: StatEntryRow): StatEntry {
 // as a defence-in-depth backstop for queries that come through the Supabase
 // JS client / REST API.
 // ---------------------------------------------------------------------------
+
+async function attachParticipantsAndEntries(
+  challengeRows: ChallengeRow[],
+): Promise<ChallengeWithParticipants[]> {
+  if (challengeRows.length === 0) return [];
+  const ids = challengeRows.map((r) => r.id);
+
+  const [partRows, entryRows] = await Promise.all([
+    db
+      .select()
+      .from(challengeParticipants)
+      .where(inArray(challengeParticipants.challengeId, ids)),
+    db
+      .select()
+      .from(statEntries)
+      .where(inArray(statEntries.challengeId, ids))
+      .orderBy(asc(statEntries.recordedAt)),
+  ]);
+
+  const entriesByChallenge = new Map<string, StatEntryRow[]>();
+  for (const e of entryRows) {
+    const bucket = entriesByChallenge.get(e.challengeId) ?? [];
+    bucket.push(e);
+    entriesByChallenge.set(e.challengeId, bucket);
+  }
+
+  const partsByChallenge = new Map<
+    string,
+    { profileId: string; startingValue: string | null }[]
+  >();
+  for (const p of partRows) {
+    const bucket = partsByChallenge.get(p.challengeId) ?? [];
+    bucket.push({ profileId: p.profileId, startingValue: p.startingValue });
+    partsByChallenge.set(p.challengeId, bucket);
+  }
+
+  return challengeRows.map((row) => {
+    const challengeEntries = entriesByChallenge.get(row.id) ?? [];
+    const participants: Participant[] = (partsByChallenge.get(row.id) ?? []).map(
+      (p) => ({
+        profileId: p.profileId,
+        startingValue: numericToNumber(p.startingValue),
+        entries: challengeEntries
+          .filter((e) => e.profileId === p.profileId)
+          .map(toStatEntry),
+      }),
+    );
+    return { ...toChallenge(row), participants };
+  });
+}
+
+/**
+ * Same scope as listForUser — every challenge the user can see — but
+ * returns participants + entries hydrated. Used by dashboard + leaderboard.
+ */
+export async function listWithParticipantsForUser(
+  userId: string,
+): Promise<ChallengeWithParticipants[]> {
+  const rows = await db
+    .selectDistinct({ c: challenges })
+    .from(challenges)
+    .leftJoin(
+      challengeParticipants,
+      eq(challengeParticipants.challengeId, challenges.id),
+    )
+    .where(
+      or(
+        eq(challenges.createdBy, userId),
+        eq(challengeParticipants.profileId, userId),
+      ),
+    )
+    .orderBy(desc(challenges.createdAt));
+
+  return attachParticipantsAndEntries(rows.map((r) => r.c));
+}
 
 export const challengeRepo: IChallengeRepo = {
   async findById(id) {
