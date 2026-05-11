@@ -44,6 +44,16 @@ const queryClient = postgres(env.SUPABASE_DB_URL, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
+  // Override the 8s statement_timeout that Supavisor inherits from the
+  // `authenticator` role (the pool's login role; the timeout sticks even
+  // after the session switches to `postgres` via SET ROLE). The Supabase
+  // advisor sets it so anon/authenticated REST callers can't DoS the DB
+  // with long queries — but our server-side connection is trusted. Sent
+  // in the Postgres StartupMessage so it applies per backend connection
+  // the pooler hands out. 30s is plenty for any UI render.
+  connection: {
+    statement_timeout: 30000,
+  },
 });
 
 export const db = drizzle(queryClient, { schema });
