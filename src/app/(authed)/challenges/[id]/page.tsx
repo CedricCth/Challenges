@@ -16,6 +16,9 @@ import { isParticipantOrCreator } from "@/features/challenges/repo";
 import { findProfilesByIds } from "@/features/profiles/repo";
 import { DeclareWinnerDialog } from "@/features/challenges/components/declare-winner-dialog";
 import { WinnerBadge } from "@/features/challenges/components/winner-badge";
+import { StatsChart } from "@/features/stats/components/stats-chart";
+import { StatsEntriesList } from "@/features/stats/components/stats-entries-list";
+import { signStatPhotoUrl } from "@/features/stats/storage";
 import { formatLongDay, formatNumber } from "@/lib/format";
 
 export default async function ChallengeDetailPage({
@@ -40,18 +43,37 @@ export default async function ChallengeDetailPage({
   const strategy = ChallengeTypeFactory.has(challenge.typeKey)
     ? ChallengeTypeFactory.get(challenge.typeKey)
     : null;
-  const goalMetricLabel =
-    strategy?.metrics.find((m) => m.metric === challenge.goalMetric)?.label ??
-    challenge.goalMetric ??
-    "—";
-  const goalUnit =
-    strategy?.metrics.find((m) => m.metric === challenge.goalMetric)?.unit ?? "";
+  const goalMetric = challenge.goalMetric ?? strategy?.metrics[0]?.metric ?? "";
+  const goalMetricSpec = strategy?.metrics.find(
+    (m) => m.metric === goalMetric,
+  );
+  const goalUnit = goalMetricSpec?.unit ?? "";
 
   const participantIds = challenge.participants.map((p) => p.profileId);
   const profiles = await findProfilesByIds([
     ...new Set([...participantIds, challenge.createdBy]),
   ]);
   const profilesById = Object.fromEntries(profiles.map((p) => [p.id, p]));
+  const defaultColors = Object.fromEntries(
+    profiles.map((p) => [p.id, p.color ?? "#94a3b8"]),
+  );
+
+  const allEntries = challenge.participants.flatMap((p) => p.entries);
+  allEntries.sort(
+    (a, b) => b.recordedAt.getTime() - a.recordedAt.getTime(),
+  );
+
+  // Sign photo URLs in parallel.
+  const entriesWithPhotos = await Promise.all(
+    allEntries.map(async (e) => ({
+      ...e,
+      signedPhotoUrl: await signStatPhotoUrl(e.photoUrl),
+    })),
+  );
+
+  const metricLabels = Object.fromEntries(
+    (strategy?.metrics ?? []).map((m) => [m.metric, m.label]),
+  );
 
   const canDeclare = challenge.status !== "completed";
 
@@ -59,7 +81,7 @@ export default async function ChallengeDetailPage({
     <main className="mx-auto w-full max-w-3xl px-4 py-6 space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">
               {challenge.title}
             </h1>
@@ -80,14 +102,16 @@ export default async function ChallengeDetailPage({
         <CardHeader>
           <CardTitle className="text-base">Goal</CardTitle>
           <CardDescription className="text-xs">
-            {challenge.goalDirection === "lower" ? "Lower is better" : "Higher is better"}{" "}
+            {challenge.goalDirection === "lower"
+              ? "Lower is better"
+              : "Higher is better"}{" "}
             · {strategy?.label ?? challenge.typeKey}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3 text-sm">
           <div>
             <p className="text-muted-foreground">Metric</p>
-            <p>{goalMetricLabel}</p>
+            <p>{goalMetricSpec?.label ?? goalMetric}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Target change</p>
@@ -98,38 +122,48 @@ export default async function ChallengeDetailPage({
           <div>
             <p className="text-muted-foreground">Window</p>
             <p>
-              {formatLongDay(challenge.startDate)} → {formatLongDay(challenge.endDate)}
+              {formatLongDay(challenge.startDate)} →{" "}
+              {formatLongDay(challenge.endDate)}
             </p>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Participants</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle className="text-base">Progress</CardTitle>
+            <CardDescription className="text-xs">
+              {goalMetricSpec?.label ?? goalMetric} over time
+            </CardDescription>
+          </div>
+          <Button asChild size="sm">
+            <Link href={`/challenges/${challenge.id}/stats/new`}>
+              + Add entry
+            </Link>
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {challenge.participants.length === 0 ? (
-            <p className="text-muted-foreground">No participants yet.</p>
-          ) : (
-            challenge.participants.map((p) => {
-              const profile = profilesById[p.profileId];
-              return (
-                <div
-                  key={p.profileId}
-                  className="flex items-center justify-between rounded-md border px-3 py-2"
-                >
-                  <span className="font-medium">
-                    {profile?.displayName ?? p.profileId.slice(0, 8)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {p.entries.length}{" "}
-                    {p.entries.length === 1 ? "entry" : "entries"}
-                  </span>
-                </div>
-              );
-            })
-          )}
+        <CardContent>
+          <StatsChart
+            goalMetric={goalMetric}
+            unit={goalUnit}
+            participants={challenge.participants}
+            profilesById={profilesById}
+            defaultColors={defaultColors}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recent entries</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StatsEntriesList
+            entries={entriesWithPhotos}
+            profilesById={profilesById}
+            metricLabels={metricLabels}
+          />
         </CardContent>
       </Card>
 

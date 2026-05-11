@@ -4,6 +4,8 @@ import { ChallengeTypeFactory } from "@/features/challenges/factory";
 import { challengeRepo } from "@/features/challenges/repo";
 import { makeChallengeService } from "@/features/challenges/service";
 import { FitnessStrategy } from "@/features/challenges/strategies/fitness";
+import { statsRepo } from "@/features/stats/repo";
+import { makeStatsService } from "@/features/stats/service";
 
 /**
  * Composition root. The one place that knows the full list of challenge
@@ -25,3 +27,4 @@ if (ChallengeTypeFactory.list().length === 0) {
 }
 
 export const challengeService = makeChallengeService(challengeRepo);
+export const statsService = makeStatsService(statsRepo);
