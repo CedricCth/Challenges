@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { challengeService } from "@/server/composition";
 import { createClient } from "@/server/auth/server";
+import { notifyChallengeParticipants } from "@/features/notifications/producer";
 import { isParticipantOrCreator } from "./repo";
 import {
   ALLOWED_PHOTO_MIME,
@@ -87,6 +88,13 @@ export async function createChallenge(
     };
   }
 
+  await notifyChallengeParticipants({
+    actorId: userId,
+    challengeId,
+    kind: "challenge_created",
+    payload: { title: String(formData.get("title") ?? "") },
+  });
+
   revalidatePath("/challenges");
   revalidatePath("/dashboard");
   redirect(`/challenges/${challengeId}`);
@@ -137,6 +145,13 @@ export async function updateChallenge(
         err instanceof Error ? err.message : "Couldn't save changes. Try again.",
     };
   }
+
+  await notifyChallengeParticipants({
+    actorId: userId,
+    challengeId: id,
+    kind: "challenge_edited",
+    payload: { title: String(formData.get("title") ?? "") },
+  });
 
   revalidatePath("/challenges");
   revalidatePath(`/challenges/${id}`);
@@ -210,6 +225,16 @@ export async function declareWinner(
     tie: outcome === "tie",
     winnerNote: note ?? null,
     winnerPhotoUrl,
+  });
+
+  await notifyChallengeParticipants({
+    actorId: userId,
+    challengeId,
+    kind: "winner_declared",
+    payload: {
+      tie: outcome === "tie",
+      winnerId: outcome === "tie" ? null : winnerId,
+    },
   });
 
   revalidatePath("/challenges");

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/server/auth/server";
 import { LogoutButton } from "@/features/auth/components/logout-button";
+import { countUnreadForUser } from "@/features/notifications/repo";
 
 /**
  * Page-level guard (defence in depth, second layer per ADR-004).
@@ -23,10 +24,20 @@ export default async function AuthedLayout({
 
   if (!user) redirect("/login");
 
-  const navItems = [
+  // Count unread notifications for the badge. Defensive try/catch so a DB
+  // hiccup never blocks the whole header.
+  let unread = 0;
+  try {
+    unread = await countUnreadForUser(user.id);
+  } catch (err) {
+    console.error("[layout] unread count failed:", err);
+  }
+
+  const navItems: { href: string; label: string; badge?: number }[] = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/challenges", label: "Challenges" },
     { href: "/leaderboard", label: "Leaderboard" },
+    { href: "/news", label: "News", badge: unread },
     { href: "/about-us", label: "About" },
     { href: "/settings", label: "Settings" },
   ];
@@ -43,9 +54,14 @@ export default async function AuthedLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md px-2 py-1.5 text-sm whitespace-nowrap hover:bg-accent hover:text-accent-foreground"
+                className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm whitespace-nowrap hover:bg-accent hover:text-accent-foreground"
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge != null && item.badge > 0 && (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold tabular-nums text-primary-foreground">
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>

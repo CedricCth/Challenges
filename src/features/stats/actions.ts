@@ -8,6 +8,7 @@ import { createClient } from "@/server/auth/server";
 import { statsService } from "@/server/composition";
 import { isParticipantOrCreator } from "@/features/challenges/repo";
 import { challengeRepo } from "@/features/challenges/repo";
+import { notifyChallengeParticipants } from "@/features/notifications/producer";
 import { deleteStatEntry as repoDeleteStatEntry } from "./repo";
 import {
   ALLOWED_PHOTO_MIME,
@@ -103,8 +104,9 @@ export async function addStatEntry(
     photoUrl = path; // store the path; we sign on read.
   }
 
+  let savedEntry: Awaited<ReturnType<typeof statsService.add>> | null = null;
   try {
-    await statsService.add(
+    savedEntry = await statsService.add(
       challenge.typeKey,
       challengeId,
       userId,
@@ -125,6 +127,19 @@ export async function addStatEntry(
       error:
         err instanceof Error ? err.message : "Couldn't save the entry. Try again.",
     };
+  }
+
+  if (savedEntry) {
+    await notifyChallengeParticipants({
+      actorId: userId,
+      challengeId,
+      kind: "stat_added",
+      payload: {
+        metric: savedEntry.metric,
+        value: savedEntry.value,
+        unit: savedEntry.unit,
+      },
+    });
   }
 
   revalidatePath(`/challenges/${challengeId}`);

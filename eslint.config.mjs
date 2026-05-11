@@ -44,6 +44,7 @@ const eslintConfig = defineConfig([
       "src/**/repo.ts",
       "src/**/service.ts",
       "src/**/storage.ts",
+      "src/**/producer.ts",
       "**/*.config.{ts,mjs}",
       "drizzle.config.ts",
     ],

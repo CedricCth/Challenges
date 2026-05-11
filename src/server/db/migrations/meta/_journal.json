@@ -36,6 +36,20 @@
       "when": 1778490113577,
       "tag": "0004_wandering_old_lace",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778490461556,
+      "tag": "0005_cooing_calypso",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778490479754,
+      "tag": "0006_notifications_rls",
+      "breakpoints": true
     }
   ]
 }

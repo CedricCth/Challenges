@@ -162,6 +162,57 @@ export const statEntries = pgTable(
   ],
 );
 
+/**
+ * Producer/consumer queue for in-app notifications.
+ *
+ * Producers (server actions: addStatEntry, updateChallenge, declareWinner,
+ * createChallenge) call notifyChallengeParticipants() which inserts one
+ * row per *other* participant of the affected challenge.
+ *
+ * Consumers:
+ *   1) the /news page reads recent rows for the current user;
+ *   2) (Phase 11) an email worker reads unread, sends a digest, marks read.
+ *
+ * `payload` carries the small extras needed to render a friendly summary
+ * line ({ metric, value, unit } for stat_added, etc.) — kept as jsonb so
+ * adding a new kind doesn't need a migration.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    actorId: uuid("actor_id").references(() => profiles.id, {
+      onDelete: "set null",
+    }),
+    kind: text("kind").notNull(),
+    challengeId: uuid("challenge_id").references(() => challenges.id, {
+      onDelete: "cascade",
+    }),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("notifications_recipient_created_idx").on(
+      t.recipientId,
+      t.createdAt.desc(),
+    ),
+    index("notifications_recipient_unread_idx").on(t.recipientId, t.readAt),
+    check(
+      "notifications_kind_check",
+      sql`${t.kind} in ('stat_added','challenge_edited','winner_declared','challenge_created')`,
+    ),
+  ],
+);
+
 export const milestones = pgTable("milestones", {
   id: uuid("id")
     .primaryKey()
