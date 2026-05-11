@@ -30,11 +30,20 @@ import * as schema from "./schema";
  *
  * The pooler is in "transaction mode" so we disable prepared statements.
  * SSL is required by Supabase.
+ *
+ * max=10 lets the dashboard's parallel queries (Promise.all over
+ * challenges + participants + entries + profiles) actually run in
+ * parallel; with max=1 they serialise on a single connection and the
+ * page wall-clock equals the sum of every round-trip. idle_timeout keeps
+ * the connection warm between requests so the second click in a session
+ * doesn't pay the TLS handshake again.
  */
 const queryClient = postgres(env.SUPABASE_DB_URL, {
   prepare: false,
   ssl: "require",
-  max: 1,
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 10,
 });
 
 export const db = drizzle(queryClient, { schema });
