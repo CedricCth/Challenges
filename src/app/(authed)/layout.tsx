@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { LogoMark } from "@/components/doodles";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/server/auth/server";
 import { LogoutButton } from "@/features/auth/components/logout-button";
@@ -46,8 +47,12 @@ export default async function AuthedLayout({
     <div className="flex min-h-screen flex-1 flex-col">
       <header className="border-b">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-6">
-          <Link href="/dashboard" className="font-semibold tracking-tight">
-            Cedi <span className="text-muted-foreground">vs</span> Stefi
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-semibold tracking-tight"
+          >
+            <LogoMark className="h-6" />
+            <span className="sr-only">Cedi vs Stefi</span>
           </Link>
           <nav className="order-3 flex w-full items-center gap-0.5 overflow-x-auto sm:order-2 sm:w-auto">
             {navItems.map((item) => (

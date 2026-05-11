@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyStateDoodle } from "@/components/doodles";
 import { createClient } from "@/server/auth/server";
 import "@/server/composition";
 import { listWithParticipantsForUser } from "@/features/challenges/repo";
@@ -39,9 +40,14 @@ export default async function LeaderboardPage() {
         </p>
       </div>
 
-      {entries.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No participants yet.
+      {entries.length === 0 || completedCount === 0 ? (
+        <div className="rounded-xl border border-dashed p-8 text-center space-y-3 flex flex-col items-center">
+          <EmptyStateDoodle variant="leaderboard" />
+          <p className="text-sm text-muted-foreground max-w-xs">
+            {entries.length === 0
+              ? "No participants yet."
+              : "No challenges finished yet — go declare a winner."}
+          </p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">

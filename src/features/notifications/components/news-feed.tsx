@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyStateDoodle } from "@/components/doodles";
 import type { Profile } from "@/domain/entities";
 
 import type { NotificationRecord } from "../types";
@@ -20,9 +21,12 @@ interface NewsItem {
 export function NewsFeed({ items }: { items: NewsItem[] }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Nothing yet. When the other one logs an entry or edits a challenge,
-        you&apos;ll see it here.
+      <div className="rounded-xl border border-dashed p-8 text-center space-y-3 flex flex-col items-center">
+        <EmptyStateDoodle variant="news" />
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Nothing yet. When the other one logs an entry or edits a challenge,
+          you&apos;ll see it here.
+        </p>
       </div>
     );
   }

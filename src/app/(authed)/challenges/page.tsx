@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { EmptyStateDoodle } from "@/components/doodles";
 import { challengeService } from "@/server/composition";
 import { createClient } from "@/server/auth/server";
 import { listAllProfiles } from "@/features/profiles/repo";
@@ -29,15 +30,18 @@ export default async function ChallengesPage() {
       </div>
 
       {challenges.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No challenges yet.{" "}
-          <Link
-            href="/challenges/new"
-            className="font-medium text-foreground underline"
-          >
-            Start your first one
-          </Link>
-          .
+        <div className="rounded-xl border border-dashed p-8 text-center space-y-3 flex flex-col items-center">
+          <EmptyStateDoodle variant="challenges" />
+          <p className="text-sm text-muted-foreground">
+            No challenges yet.{" "}
+            <Link
+              href="/challenges/new"
+              className="font-medium text-foreground underline"
+            >
+              Start your first one
+            </Link>
+            .
+          </p>
         </div>
       ) : (
         <div className="grid gap-3">

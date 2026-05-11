@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { EmptyStateDoodle } from "@/components/doodles";
 import { createClient } from "@/server/auth/server";
 import { ChallengeTypeFactory } from "@/features/challenges/factory";
 import "@/server/composition";
@@ -77,7 +78,8 @@ export default async function Dashboard() {
       )}
 
       {active.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center space-y-3">
+        <div className="rounded-xl border border-dashed p-8 text-center space-y-4 flex flex-col items-center">
+          <EmptyStateDoodle variant="challenges" />
           <p className="text-sm text-muted-foreground">
             Nothing brewing right now.
           </p>

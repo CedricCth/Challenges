@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { WinnerRibbon } from "@/components/doodles";
 import type {
   ChallengeWithParticipants,
   Profile,
@@ -66,10 +67,15 @@ export function WinnerSummary({
       ? `${profilesById[challenge.winnerId]?.displayName ?? "The winner"} took it.`
       : "Completed.";
 
+  const winnerColor = challenge.winnerId
+    ? (profilesById[challenge.winnerId]?.color ?? undefined)
+    : undefined;
+
   return (
     <Card className="border-primary/30 bg-primary/[0.03]">
-      <CardHeader>
-        <CardTitle className="text-base">{headline}</CardTitle>
+      <CardHeader className="items-center text-center space-y-2">
+        <WinnerRibbon color={winnerColor ?? "var(--doodle-honey)"} />
+        <CardTitle className="text-lg">{headline}</CardTitle>
         <CardDescription className="text-xs">
           Ended {formatLongDay(challenge.endDate)}
         </CardDescription>

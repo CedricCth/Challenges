@@ -3,50 +3,86 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Soft-doodle palette. Warm cream background, neutral type, accent colours
+ * from the docs (Cedi #2563EB blue / Stefi #C084FC lilac), plus a dusky
+ * rose for highlights (winner ribbons, decorative doodles) and a soft sage
+ * for success states. The chart line colours stay locked to the per-user
+ * accents so the brand stays consistent across pages.
+ */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  /* Per-user accent colours (docs project memory). */
-  --accent-cedi: oklch(0.55 0.21 263);
-  --accent-stefi: oklch(0.78 0.18 308);
+  --radius: 0.875rem; /* slightly rounder than default for the cosy vibe */
+
+  /* Warm cream paper, not pure white. */
+  --background: oklch(0.98 0.015 80);
+  --foreground: oklch(0.2 0.02 60);
+
+  /* Cards sit on top of the paper, slightly brighter. */
+  --card: oklch(1 0.005 80);
+  --card-foreground: oklch(0.2 0.02 60);
+  --popover: oklch(1 0.005 80);
+  --popover-foreground: oklch(0.2 0.02 60);
+
+  /* Buttons + brand: deep ink. */
+  --primary: oklch(0.25 0.025 65);
+  --primary-foreground: oklch(0.98 0.015 80);
+
+  --secondary: oklch(0.94 0.02 80);
+  --secondary-foreground: oklch(0.25 0.025 65);
+
+  --muted: oklch(0.93 0.025 80);
+  --muted-foreground: oklch(0.48 0.025 60);
+
+  --accent: oklch(0.92 0.04 350); /* hint of dusky rose for hover states */
+  --accent-foreground: oklch(0.25 0.025 65);
+
+  --destructive: oklch(0.6 0.21 25);
+  --border: oklch(0.87 0.025 75);
+  --input: oklch(0.87 0.025 75);
+  --ring: oklch(0.55 0.21 263); /* matches Cedi blue so focus rings stay on-brand */
+
+  /* Per-user accents (locked — used in charts, badges, doodles). */
+  --accent-cedi: oklch(0.55 0.21 263); /* royal blue #2563EB */
+  --accent-stefi: oklch(0.78 0.18 308); /* bright lilac #C084FC */
+
+  /* Supporting tones for decorative doodles + status pills. */
+  --doodle-rose: oklch(0.7 0.13 5); /* dusky rose / soft plum */
+  --doodle-sage: oklch(0.72 0.08 150); /* soft sage for "completed" states */
+  --doodle-honey: oklch(0.85 0.13 75); /* warm honey, sparingly */
+  --paper-line: oklch(0.85 0.025 75); /* hand-drawn line colour */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  /* Deep warm slate, not pure black. */
+  --background: oklch(0.17 0.018 60);
+  --foreground: oklch(0.95 0.015 80);
+
+  --card: oklch(0.22 0.02 60);
+  --card-foreground: oklch(0.95 0.015 80);
+  --popover: oklch(0.22 0.02 60);
+  --popover-foreground: oklch(0.95 0.015 80);
+
+  --primary: oklch(0.92 0.015 80);
+  --primary-foreground: oklch(0.22 0.02 60);
+
+  --secondary: oklch(0.27 0.02 60);
+  --secondary-foreground: oklch(0.95 0.015 80);
+
+  --muted: oklch(0.27 0.02 60);
+  --muted-foreground: oklch(0.72 0.02 80);
+
+  --accent: oklch(0.3 0.04 340);
+  --accent-foreground: oklch(0.95 0.015 80);
+
+  --destructive: oklch(0.7 0.2 22);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.6 0.18 263);
+
+  --doodle-rose: oklch(0.65 0.14 5);
+  --doodle-sage: oklch(0.68 0.09 150);
+  --doodle-honey: oklch(0.78 0.13 75);
+  --paper-line: oklch(0.4 0.02 60);
 }
 
 @theme inline {
@@ -70,6 +106,10 @@
   --color-ring: var(--ring);
   --color-cedi: var(--accent-cedi);
   --color-stefi: var(--accent-stefi);
+  --color-doodle-rose: var(--doodle-rose);
+  --color-doodle-sage: var(--doodle-sage);
+  --color-doodle-honey: var(--doodle-honey);
+  --color-paper-line: var(--paper-line);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
