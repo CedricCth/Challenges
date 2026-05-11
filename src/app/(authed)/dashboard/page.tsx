@@ -25,10 +25,31 @@ export default async function Dashboard() {
     user.email?.split("@")[0] ??
     "friend";
 
-  const [allChallenges, profiles] = await Promise.all([
-    listWithParticipantsForUser(user.id),
-    listAllProfiles(),
-  ]);
+  // Defensive: if the DB call blows up, log + render an empty state instead
+  // of 500ing the whole page (which silently breaks the post-login redirect
+  // and leaves the login form stuck on "Signing in…").
+  let allChallenges: Awaited<ReturnType<typeof listWithParticipantsForUser>> = [];
+  let profiles: Awaited<ReturnType<typeof listAllProfiles>> = [];
+  let dataError: string | null = null;
+  try {
+    [allChallenges, profiles] = await Promise.all([
+      listWithParticipantsForUser(user.id),
+      listAllProfiles(),
+    ]);
+  } catch (err) {
+    console.error("[dashboard] data fetch failed:", err);
+    // Drizzle wraps the underlying postgres-js error in .cause — the actual
+    // Postgres error code/message lives there.
+    const cause =
+      err instanceof Error && err.cause instanceof Error ? err.cause : null;
+    const causeRecord = cause as unknown as Record<string, unknown> | null;
+    const code =
+      causeRecord && typeof causeRecord.code === "string"
+        ? (causeRecord.code as string)
+        : null;
+    const reason = cause?.message ?? (err instanceof Error ? err.message : "");
+    dataError = code ? `[${code}] ${reason}` : reason || "Couldn't load your data.";
+  }
   const profilesById = Object.fromEntries(profiles.map((p) => [p.id, p]));
   const active = allChallenges.filter(
     (c) => c.status === "planned" || c.status === "active",
@@ -48,6 +69,12 @@ export default async function Dashboard() {
               : `${active.length} active challenges.`}
         </p>
       </div>
+
+      {dataError && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+          Couldn&apos;t load your challenges: <code>{dataError}</code>
+        </div>
+      )}
 
       {active.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center space-y-3">

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, or } from "drizzle-orm";
 
 import { db } from "@/server/db/client";
 import {
@@ -126,6 +126,29 @@ async function attachParticipantsAndEntries(
 }
 
 /**
+ * "Challenges the user can see" — used by the list page, the dashboard, and
+ * the leaderboard. We use EXISTS over a subquery instead of `LEFT JOIN +
+ * SELECT DISTINCT` because the latter forces the planner to deduplicate 17
+ * columns including jsonb, which trips the Supabase pooler's statement
+ * timeout. EXISTS hits the (profile_id) index on challenge_participants
+ * cleanly.
+ */
+function userVisibleChallengesWhere(userId: string) {
+  const participantExists = exists(
+    db
+      .select()
+      .from(challengeParticipants)
+      .where(
+        and(
+          eq(challengeParticipants.challengeId, challenges.id),
+          eq(challengeParticipants.profileId, userId),
+        ),
+      ),
+  );
+  return or(eq(challenges.createdBy, userId), participantExists);
+}
+
+/**
  * Same scope as listForUser — every challenge the user can see — but
  * returns participants + entries hydrated. Used by dashboard + leaderboard.
  */
@@ -133,21 +156,12 @@ export async function listWithParticipantsForUser(
   userId: string,
 ): Promise<ChallengeWithParticipants[]> {
   const rows = await db
-    .selectDistinct({ c: challenges })
+    .select()
     .from(challenges)
-    .leftJoin(
-      challengeParticipants,
-      eq(challengeParticipants.challengeId, challenges.id),
-    )
-    .where(
-      or(
-        eq(challenges.createdBy, userId),
-        eq(challengeParticipants.profileId, userId),
-      ),
-    )
+    .where(userVisibleChallengesWhere(userId))
     .orderBy(desc(challenges.createdAt));
 
-  return attachParticipantsAndEntries(rows.map((r) => r.c));
+  return attachParticipantsAndEntries(rows);
 }
 
 export const challengeRepo: IChallengeRepo = {
@@ -182,43 +196,27 @@ export const challengeRepo: IChallengeRepo = {
 
   async findActiveForUser(userId) {
     const rows = await db
-      .selectDistinct({ c: challenges })
+      .select()
       .from(challenges)
-      .leftJoin(
-        challengeParticipants,
-        eq(challengeParticipants.challengeId, challenges.id),
-      )
       .where(
         and(
           inArray(challenges.status, ["planned", "active"]),
-          or(
-            eq(challenges.createdBy, userId),
-            eq(challengeParticipants.profileId, userId),
-          ),
+          userVisibleChallengesWhere(userId),
         ),
       )
       .orderBy(desc(challenges.createdAt));
 
-    return rows.map((r) => toChallenge(r.c));
+    return rows.map(toChallenge);
   },
 
   async listForUser(userId) {
     const rows = await db
-      .selectDistinct({ c: challenges })
+      .select()
       .from(challenges)
-      .leftJoin(
-        challengeParticipants,
-        eq(challengeParticipants.challengeId, challenges.id),
-      )
-      .where(
-        or(
-          eq(challenges.createdBy, userId),
-          eq(challengeParticipants.profileId, userId),
-        ),
-      )
+      .where(userVisibleChallengesWhere(userId))
       .orderBy(desc(challenges.createdAt));
 
-    return rows.map((r) => toChallenge(r.c));
+    return rows.map(toChallenge);
   },
 
   async create(input: CreateChallengeInput) {
