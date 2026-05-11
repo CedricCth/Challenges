@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { challengeService } from "@/server/composition";
 import { createClient } from "@/server/auth/server";
@@ -53,6 +54,9 @@ export async function createChallenge(
     .map((v) => String(v))
     .filter(Boolean);
 
+  // NOTE: `redirect()` throws NEXT_REDIRECT; do not put it inside try/catch
+  // or the catch will swallow it and show a false-negative error.
+  let challengeId: string;
   try {
     const challenge = await challengeService.create(
       userId,
@@ -60,15 +64,27 @@ export async function createChallenge(
       rawInput,
       participantIds,
     );
-    revalidatePath("/challenges");
-    revalidatePath("/dashboard");
-    redirect(`/challenges/${challenge.id}`);
+    challengeId = challenge.id;
   } catch (err) {
-    if (err instanceof Error && err.message.includes("ZodError")) {
-      return { ok: false, error: "Check the form for errors." };
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        error: err.issues[0]?.message ?? "Check the form for errors.",
+      };
     }
-    return { ok: false, error: "Couldn't create the challenge. Try again." };
+    console.error("[createChallenge] failed:", err);
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Couldn't create the challenge. Try again.",
+    };
   }
+
+  revalidatePath("/challenges");
+  revalidatePath("/dashboard");
+  redirect(`/challenges/${challengeId}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -102,12 +118,24 @@ export async function updateChallenge(
 
   try {
     await challengeService.update(id, typeKey, rawInput);
-    revalidatePath("/challenges");
-    revalidatePath(`/challenges/${id}`);
-    redirect(`/challenges/${id}`);
-  } catch {
-    return { ok: false, error: "Couldn't save changes. Try again." };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        error: err.issues[0]?.message ?? "Check the form for errors.",
+      };
+    }
+    console.error("[updateChallenge] failed:", err);
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Couldn't save changes. Try again.",
+    };
   }
+
+  revalidatePath("/challenges");
+  revalidatePath(`/challenges/${id}`);
+  redirect(`/challenges/${id}`);
 }
 
 // ---------------------------------------------------------------------------

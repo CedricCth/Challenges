@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { createClient } from "@/server/auth/server";
 import { statsService } from "@/server/composition";
@@ -85,12 +86,26 @@ export async function addStatEntry(
   }
 
   try {
-    await statsService.add(challenge.typeKey, challengeId, userId, rawInput, photoUrl);
+    await statsService.add(
+      challenge.typeKey,
+      challengeId,
+      userId,
+      rawInput,
+      photoUrl,
+    );
   } catch (err) {
-    if (err instanceof Error && err.message.includes("ZodError")) {
-      return { ok: false, error: "Check the form for errors." };
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        error: err.issues[0]?.message ?? "Check the form for errors.",
+      };
     }
-    return { ok: false, error: "Couldn't save the entry. Try again." };
+    console.error("[addStatEntry] failed:", err);
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Couldn't save the entry. Try again.",
+    };
   }
 
   revalidatePath(`/challenges/${challengeId}`);
