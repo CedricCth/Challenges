@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/server/auth/server";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 
@@ -48,7 +49,8 @@ export default async function AuthedLayout({
               </Link>
             ))}
           </nav>
-          <div className="order-2 sm:order-3">
+          <div className="order-2 flex items-center gap-1 sm:order-3">
+            <ThemeToggle />
             <LogoutButton />
           </div>
         </div>

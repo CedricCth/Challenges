@@ -5,7 +5,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "@/server/env";
 
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/api/health"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/auth/callback",
+  "/api/health",
+  "/api/log-error",
+];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/_next");
