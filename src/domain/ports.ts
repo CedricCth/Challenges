@@ -67,7 +67,28 @@ export interface AddStatInput {
   recordedAt?: Date;
 }
 
+export interface UpdateStatInput {
+  id: string;
+  /** Repo-level ownership guard. The UPDATE will WHERE on this. */
+  ownerProfileId: string;
+  metric: string;
+  value: number;
+  unit: string;
+  note: string | null;
+  /** `null` clears the photo; an empty string is treated the same. */
+  photoUrl: string | null;
+  recordedAt?: Date;
+}
+
 export interface IStatsRepo {
   add(input: AddStatInput): Promise<StatEntry>;
+  /**
+   * Updates a stat entry only if `ownerProfileId` matches. Returns the
+   * updated entity, or `null` when no row was touched (not owner / not
+   * found). RLS enforces the same rule at the DB level.
+   */
+  update(input: UpdateStatInput): Promise<StatEntry | null>;
+  /** Find an entry, scoped to its owner — used by the edit page for prefill. */
+  findOwned(id: string, ownerProfileId: string): Promise<StatEntry | null>;
   listForChallenge(challengeId: string): Promise<StatEntry[]>;
 }

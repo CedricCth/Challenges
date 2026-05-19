@@ -64,6 +64,13 @@
       "when": 1778496226550,
       "tag": "0008_avatars_bucket",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779217319097,
+      "tag": "0009_fixed_grandmaster",
+      "breakpoints": true
     }
   ]
 }

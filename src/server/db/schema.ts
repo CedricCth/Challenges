@@ -212,7 +212,7 @@ export const notifications = pgTable(
     index("notifications_recipient_unread_idx").on(t.recipientId, t.readAt),
     check(
       "notifications_kind_check",
-      sql`${t.kind} in ('stat_added','challenge_edited','winner_declared','challenge_created')`,
+      sql`${t.kind} in ('stat_added','stat_deleted','challenge_edited','winner_declared','challenge_created')`,
     ),
   ],
 );

@@ -12,6 +12,7 @@ Outputs (next to this script):
     04_layered_architecture.png — Clean Architecture layers
     05_deployment.png          — CI/CD + envs
     06_factory_pattern.png     — Factory + Strategy class diagram
+    07_edit_extension.png      — OCP/DI extension for the edit-entry feature (ADR-018)
 """
 from __future__ import annotations
 import os, subprocess, sys, pathlib
@@ -256,6 +257,78 @@ digraph FACTORY {
 ''')
 
 
+# 07 — Edit-entry OCP/DI extension (ADR-018). Highlights the *new* nodes in
+# yellow against the existing pipeline so a reader can see at a glance which
+# code was added vs reused.
+def edit_extension():
+    write_dot_png("07_edit_extension", r'''
+digraph G {
+    rankdir=LR; bgcolor="white"; fontname="Helvetica"; nodesep=0.45; ranksep=0.65;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#FFFFFF"];
+
+    // existing nodes (white)
+    new_page    [label="stats/new/page.tsx"];
+    list        [label="StatsEntriesList\n(+ Edit link on own rows)"];
+    form        [label="StatsForm\n(action injected)", fillcolor="#E3F2FD"];
+    add_action  [label="addStatEntry"];
+    delete_act  [label="deleteStatEntry"];
+    svc_add     [label="service.add()"];
+    factory     [label="ChallengeTypeFactory\n(registry — untouched)", fillcolor="#FFFDE7"];
+    s1          [label="FitnessStrategy"];
+    s2          [label="ReadingStrategy"];
+    s3          [label="...future strategy", style="rounded,filled,dashed"];
+    port_add    [label="IStatsRepo.add"];
+    port_list   [label="IStatsRepo.listForChallenge"];
+    drizzle     [label="statsRepo (Drizzle)\nimplements IStatsRepo", fillcolor="#E8F5E9"];
+    comp        [label="composition.ts\n(DI root)", fillcolor="#FFF3E0"];
+    db          [label="Postgres · stat_entries\nRLS: stats update own", shape=cylinder, fillcolor="#ECEFF1"];
+
+    // NEW nodes (yellow)
+    edit_page   [label="stats/[entryId]/edit/page.tsx\n(NEW)", fillcolor="#FEF3C7"];
+    edit_action [label="editStatEntry\n(NEW)", fillcolor="#FEF3C7"];
+    svc_upd     [label="service.update()\n(NEW)", fillcolor="#FEF3C7"];
+    port_upd    [label="IStatsRepo.update\n(NEW)", fillcolor="#FEF3C7"];
+    port_find   [label="IStatsRepo.findOwned\n(NEW)", fillcolor="#FEF3C7"];
+
+    new_page  -> form;
+    edit_page -> form;
+    list -> edit_page [label="Edit link", style="dashed"];
+    form -> add_action  [label="action prop = add"];
+    form -> edit_action [label="action prop = edit"];
+
+    add_action  -> svc_add;
+    edit_action -> svc_upd;
+
+    svc_add -> factory [label="strategy.statSchema.parse", style="dashed"];
+    svc_upd -> factory [label="SAME schema", style="dashed"];
+    factory -> s1 [style="dashed", arrowhead=none];
+    factory -> s2 [style="dashed", arrowhead=none];
+    factory -> s3 [style="dashed", arrowhead=none];
+
+    svc_add -> port_add;
+    svc_upd -> port_upd;
+    edit_page -> port_find [label="prefill", style="dashed"];
+
+    port_add  -> drizzle [arrowhead=onormal, style="dashed", label="implements"];
+    port_upd  -> drizzle [arrowhead=onormal, style="dashed"];
+    port_find -> drizzle [arrowhead=onormal, style="dashed"];
+    port_list -> drizzle [arrowhead=onormal, style="dashed"];
+
+    comp -> drizzle [label="injects", style="bold"];
+    comp -> svc_add [label="DI", style="bold"];
+    comp -> svc_upd [label="DI", style="bold"];
+
+    drizzle -> db;
+    delete_act -> drizzle;
+
+    {rank=same; new_page; edit_page; list;}
+    {rank=same; add_action; edit_action; delete_act;}
+    {rank=same; svc_add; svc_upd;}
+    {rank=same; port_add; port_upd; port_find; port_list;}
+}
+''')
+
+
 if __name__ == "__main__":
     arch()
     er()
@@ -263,4 +336,5 @@ if __name__ == "__main__":
     layers()
     deploy()
     factory()
+    edit_extension()
     print("done.")

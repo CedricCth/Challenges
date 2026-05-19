@@ -8,6 +8,7 @@
  */
 export type NotificationKind =
   | "stat_added"
+  | "stat_deleted"
   | "challenge_edited"
   | "winner_declared"
   | "challenge_created";

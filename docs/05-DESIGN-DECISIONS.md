@@ -300,3 +300,57 @@ date logic.
 
 **Why now:** the user is between two countries until the next visit; same wall
 date in different TZs would otherwise show two separate points on the chart.
+
+---
+
+## ADR-018 — Generic edit via the existing Factory/Strategy/Port
+**Date:** 2026-05-19 · **Status:** Accepted
+
+**Context.** Cedi asked for an **edit** option on stat entries, but explicitly
+required it to be generic across all challenge types and easily extensible
+when new types are added. Two shapes were on the table:
+
+1. **Per-type edit handlers** — each `XxxStrategy` exposes its own
+   `editEntry`/`schema`/UI. Reads as "every type owns its CRUD". Implies
+   touching every strategy file when the CRUD surface changes.
+2. **Generic edit via the existing pipeline** — extend the `IStatsRepo`
+   port with `update` + `findOwned`, add a sibling `service.update` that
+   re-uses the strategy's existing `statSchema`, and inject the same form
+   component with a different action prop.
+
+**Decision.** Shape **(2)**. The Factory + Strategy split (ADR-006) plus the
+DIP port (ADR-007) were designed exactly for this case: type-specific
+knowledge stays in the strategy (`metrics`, `statSchema`), and verbs
+(add/update/list/delete) are generic functions over a port. Adding a future
+challenge type still requires only:
+
+  1. write `strategies/<type>.ts`,
+  2. register it in `composition.ts`,
+  3. insert a row into `public.challenge_types`.
+
+It now lights up **add + edit + list + chart + leaderboard** without any
+other file changing. The `src/features/challenges/strategies/` folder is
+untouched by this ADR's implementation — that is the OCP proof.
+
+**Consequences.**
+- One generic `StatsForm` covers both create and edit; the page route
+  injects the right server action. A test can unit-test `service.update`
+  with a fake `IStatsRepo`, exercising the DIP seam.
+- Ownership is enforced at three layers: page-level `findOwnedEntry`
+  returns `null` for foreign rows (URL-tampering → 404), the repo's
+  `update` filters on `profile_id`, and the `stats update own` RLS policy
+  is the last line of defence. See ADR-004 (defence in depth).
+- Photo edits are explicit (`keep | replace | remove`) via a hidden form
+  field. The action cleans up the old storage object only after the DB
+  write succeeds; on Zod failure or non-owner result we roll back the
+  freshly uploaded object so we don't leak orphans.
+- The form became the first client component to import server actions
+  *as props* rather than statically. That stays compatible with Next.js'
+  server-action serialisation because both `addStatEntry` and
+  `editStatEntry` are exported from the same `"use server"` module.
+
+**Alternatives considered.** Inline an "edit" mode toggle on the list row
+(no dedicated page) — rejected because the form already has photo, date,
+and a `<select>` that don't fit a row's footprint. Keep delete-and-recreate
+as the only edit path — rejected because it would re-issue notifications
+and reset `recordedAt`.

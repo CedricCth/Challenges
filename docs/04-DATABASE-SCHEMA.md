@@ -91,6 +91,12 @@ PK: `(challenge_id, profile_id)`. Index: `(profile_id)`.
 
 Indexes: `(challenge_id, recorded_at)`, `(profile_id, recorded_at)`.
 
+> **Edit-entry note (ADR-018).** The `stats update own` RLS policy
+> (defined in `migrations/0001_rls_and_triggers.sql` and listed below)
+> is the DB-level guard for the edit-entry feature. The application
+> layer also filters on `profile_id` in its `UPDATE` query, but even a
+> bug there cannot let one user mutate the other's row.
+
 ### `milestones`
 
 | Column | Type | Notes |

@@ -111,6 +111,30 @@ function renderLine(
         </>
       );
     }
+    case "stat_deleted": {
+      const metric = n.payload.metric as string | undefined;
+      const value = n.payload.value as number | undefined;
+      const unit = n.payload.unit as string | undefined;
+      return (
+        <>
+          <strong>{actorName}</strong> deleted an entry
+          {value != null && (
+            <>
+              {" "}
+              (<span className="tabular-nums">{value}</span>
+              {unit && (
+                <span className="text-muted-foreground"> {unit}</span>
+              )}
+              {metric && (
+                <span className="text-muted-foreground"> for {metric}</span>
+              )}
+              )
+            </>
+          )}{" "}
+          on {challengeLink}.
+        </>
+      );
+    }
     case "challenge_edited":
       return (
         <>

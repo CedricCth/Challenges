@@ -228,6 +228,19 @@ function summaryLine(e: AggregatedRow): { subject: string; body: string } {
         }for ${escapeHtml(metric)} on <strong>${escapeHtml(title)}</strong>.`,
       };
     }
+    case "stat_deleted": {
+      const value = e.payload.value;
+      const unit = (e.payload.unit as string | undefined) ?? "";
+      const metric = (e.payload.metric as string | undefined) ?? "an entry";
+      const detail =
+        typeof value === "number"
+          ? `<strong>${value} ${escapeHtml(unit)}</strong> for ${escapeHtml(metric)}`
+          : escapeHtml(metric);
+      return {
+        subject: `${actor} deleted an entry`,
+        body: `<strong>${escapeHtml(actor)}</strong> deleted ${detail} on <strong>${escapeHtml(title)}</strong>.`,
+      };
+    }
     case "challenge_edited":
       return {
         subject: `${actor} edited ${title}`,

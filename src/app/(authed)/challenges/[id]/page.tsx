@@ -177,6 +177,7 @@ export default async function ChallengeDetailPage({
             entries={entriesWithPhotos}
             profilesById={profilesById}
             metricLabels={metricLabels}
+            currentUserId={user.id}
           />
         </CardContent>
       </Card>

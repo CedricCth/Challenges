@@ -1,7 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import type { Profile, StatEntry } from "@/domain/entities";
 import { formatLocalDay, formatNumber } from "@/lib/format";
+
+import { DeleteEntryButton } from "./delete-entry-button";
 
 interface EntryWithPhoto extends StatEntry {
   signedPhotoUrl: string | null;
@@ -11,10 +14,13 @@ export function StatsEntriesList({
   entries,
   profilesById,
   metricLabels,
+  currentUserId,
 }: {
   entries: EntryWithPhoto[];
   profilesById: Record<string, Profile>;
   metricLabels: Record<string, string>;
+  /** When set, an Edit link is rendered on rows owned by this profile. */
+  currentUserId?: string;
 }) {
   if (entries.length === 0) {
     return (
@@ -29,6 +35,7 @@ export function StatsEntriesList({
       {entries.map((e) => {
         const profile = profilesById[e.profileId];
         const accent = profile?.color ?? "#94a3b8";
+        const canEdit = currentUserId && e.profileId === currentUserId;
         return (
           <li
             key={e.id}
@@ -46,8 +53,22 @@ export function StatsEntriesList({
                 <span className="text-xs text-muted-foreground">
                   {metricLabels[e.metric] ?? e.metric}
                 </span>
-                <span className="ml-auto text-xs text-muted-foreground">
+                <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                   {formatLocalDay(e.recordedAt)}
+                  {canEdit && (
+                    <>
+                      <Link
+                        href={`/challenges/${e.challengeId}/stats/${e.id}/edit`}
+                        className="underline hover:text-foreground"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteEntryButton
+                        challengeId={e.challengeId}
+                        entryId={e.id}
+                      />
+                    </>
+                  )}
                 </span>
               </div>
               <p className="text-base">

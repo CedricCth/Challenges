@@ -132,6 +132,65 @@ strategy provides its own Zod schema for the stat-entry form.
 
 ![Factory + Strategy](diagrams/06_factory_pattern.png)
 
+### How "edit entry" was added without touching a single strategy
+
+When we added the edit-entry feature (ADR-018), the same OCP guarantees held:
+**no file under `src/features/challenges/strategies/` changed**. We extended the
+existing pipeline like this:
+
+```mermaid
+flowchart LR
+    subgraph UI["UI"]
+        NewPage["stats/new"]
+        EditPage["stats/[entryId]/edit (NEW)"]
+        Form["StatsForm<br/>action injected"]
+        List["StatsEntriesList<br/>+ Edit link on own rows"]
+        NewPage --> Form
+        EditPage --> Form
+    end
+    subgraph Actions["Server Actions"]
+        AddAction["addStatEntry"]
+        EditAction["editStatEntry (NEW)"]
+    end
+    Form -- "action prop" --> AddAction
+    Form -- "action prop" --> EditAction
+    List -- "Edit link" --> EditPage
+    subgraph Service["StatsService"]
+        SAdd["add()"]
+        SUpd["update() (NEW)"]
+    end
+    AddAction --> SAdd
+    EditAction --> SUpd
+    subgraph Factory["ChallengeTypeFactory<br/>(untouched)"]
+        S1["FitnessStrategy"]
+        S2["ReadingStrategy"]
+        S3["…future"]
+    end
+    SAdd -- "strategy.statSchema.parse" --> Factory
+    SUpd -- "SAME schema" --> Factory
+    subgraph Port["IStatsRepo (port)"]
+        P1["add()"]
+        P2["update() (NEW)"]
+        P3["findOwned() (NEW)"]
+        P4["listForChallenge()"]
+    end
+    SAdd --> P1
+    SUpd --> P2
+    EditPage -- "prefill" --> P3
+    Composition["composition.ts<br/>DI root"] == "injects statsRepo" ==> Service
+    P1 & P2 & P3 & P4 -. implements .-> Drizzle["statsRepo (Drizzle)"]
+    Drizzle --> DB[("stat_entries<br/>RLS: stats update own")]
+
+    classDef new fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#000
+    class EditPage,EditAction,SUpd,P2,P3 new
+```
+
+Read the yellow nodes as *the only code added*. A future strategy slots into
+the bottom of the Factory cluster and inherits add **and** edit without
+touching any code outside its own strategy file. The Drizzle adapter is
+injected exactly once in `composition.ts` — that's the DIP seam that lets
+`service.update` be unit-tested with a fake repo.
+
 ## User flow & sitemap
 
 ![User flow](diagrams/03_user_flow.png)

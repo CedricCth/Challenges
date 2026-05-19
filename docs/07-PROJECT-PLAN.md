@@ -121,9 +121,11 @@ and declare a winner. Works from a phone.
 
 ## Phase 6 — Stats feature
 
-- `repo.ts`, `service.ts`, `actions.ts` for `addStatEntry`, optional photo upload
+- `repo.ts`, `service.ts`, `actions.ts` for `addStatEntry`, `editStatEntry`
+  (shipped 2026-05-19; see ADR-018), `deleteStatEntry`, optional photo upload
   (Supabase Storage bucket `stat-photos`, RLS policies from `04-DATABASE-SCHEMA.md`).
-- `StatsForm` (RHF + Zod, schema from `strategy.statSchema`).
+- `StatsForm` (RHF + Zod, schema from `strategy.statSchema`) — action-injected
+  so the same component drives create + edit.
 - **Photo handling — pinned approach (no improvising):**
   - **Client-side, in the browser** before upload, using `createImageBitmap` +
     `<canvas>` (no extra deps): resize so the longest side ≤ 1600 px, re-encode

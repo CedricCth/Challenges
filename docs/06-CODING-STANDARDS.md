@@ -8,7 +8,7 @@ Short, opinionated rules. Anything not covered here defaults to whatever Prettie
 | Principle | How it shows up |
 |---|---|
 | **S**ingle Responsibility | One file = one thing. A React component renders, a service orchestrates, a repository talks to the DB. No god-files. |
-| **O**pen/Closed | New challenge types, new metrics, new chart kinds are added by *creating* a new file (a Strategy, a chart variant) — never by editing a `switch` in core code. |
+| **O**pen/Closed | New challenge types, new metrics, new chart kinds are added by *creating* a new file (a Strategy, a chart variant) — never by editing a `switch` in core code. When you add a CRUD-shaped verb on an existing entity (e.g. "edit entry"), extend the port and service in parallel — never branch on `typeKey`. See ADR-018. |
 | **L**iskov Substitution | All `ChallengeStrategy` subclasses must be safely interchangeable. Anything that looks at "is this fitness?" is a smell — ask the strategy. |
 | **I**nterface Segregation | Ports are small (`IChallengeRepo` has *only* what challenge-related services need; `IStatsRepo` is separate). |
 | **D**ependency Inversion | Services depend on `IXxxRepo`, not on Drizzle. Drizzle implementations are wired up in the composition root (`server/composition.ts`). |
